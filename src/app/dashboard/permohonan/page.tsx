@@ -226,21 +226,20 @@ export default function PermohonanPage() {
             <div className="p-6">
               <h3 className="text-xl font-bold mb-4">📝 Ajukan Permohonan ATK Baru</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* 1. Info Pemohon */}
                 <div className="bg-blue-50 p-3 rounded-lg text-sm">
                   <p><strong>Pemohon:</strong> {user.nama || '-'}</p>
                   <p><strong>Divisi:</strong> {user.divisi || '-'}</p>
                   <p><strong>Nomor Permohonan:</strong> Akan digenerate otomatis</p>
                 </div>
+
+                {/* 2. Nomor Nota Dinas */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Nota Dinas <span className="text-red-500">*</span></label>
                   <input type="text" value={formData.nomor_nota_dinas} onChange={(e) => setFormData({ ...formData, nomor_nota_dinas: e.target.value })} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-red-500" placeholder="Contoh: ND/001/KKU/11/2026" required />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">File Nota Dinas (PDF) <span className="text-red-500">*</span></label>
-                  <input type="file" accept="application/pdf" onChange={handleFileChange} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-red-500" required />
-                  {formData.file_nota_dinas_original && <p className="text-xs text-green-600 mt-1">✅ File asli: {formData.file_nota_dinas_original}</p>}
-                  <p className="text-xs text-gray-500 mt-1">Maksimal 500KB, format PDF saja</p>
-                </div>
+
+                {/* 3. Item ATK */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Item ATK</label>
                   {formData.items.map((item, index) => (
@@ -255,11 +254,23 @@ export default function PermohonanPage() {
                   ))}
                   <button type="button" onClick={addItem} className="text-sm text-blue-600 hover:text-blue-800 mt-2">+ Tambah Item</button>
                 </div>
+
+                {/* 4. Catatan */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
                   <textarea value={formData.catatan} onChange={(e) => setFormData({ ...formData, catatan: e.target.value })} className="w-full px-3 py-2 border rounded-lg" rows={3} placeholder="Contoh: Untuk kebutuhan rapat koordinasi..." />
                 </div>
-                <div className="flex gap-2 pt-2">
+
+                {/* 5. File Nota Dinas (PDF) - DIPINDAH KE BAWAH */}
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">File Nota Dinas (PDF) <span className="text-red-500">*</span></label>
+                  <input type="file" accept="application/pdf" onChange={handleFileChange} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-red-500" required />
+                  {formData.file_nota_dinas_original && <p className="text-xs text-green-600 mt-1">✅ File asli: {formData.file_nota_dinas_original}</p>}
+                  <p className="text-xs text-gray-500 mt-1">Maksimal 500KB, format PDF saja</p>
+                </div>
+
+                {/* 6. Tombol Submit */}
+                <div className="flex gap-2 pt-2 border-t">
                   <button type="submit" disabled={loading} className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 disabled:opacity-50">{loading ? 'Mengajukan...' : 'Ajukan Permohonan'}</button>
                   <button type="button" onClick={resetForm} className="flex-1 bg-gray-200 py-2 rounded-lg hover:bg-gray-300">Batal</button>
                 </div>
