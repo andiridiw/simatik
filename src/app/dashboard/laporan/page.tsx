@@ -17,12 +17,19 @@ interface ATK {
   harga_satuan: number;
 }
 
+interface BAItem {
+  nama?: string;
+  atk_nama?: string;
+  jumlah?: number;
+  satuan?: string;
+}
+
 interface BASerahTerima {
   id: string;
-  nomor: string;
-  nama_penerima: string;
-  divisi_penerima: string;
-  items: any[];
+  nomor?: string;
+  nama_penerima?: string;
+  divisi_penerima?: string;
+  items?: BAItem[];
   tanggal_serah_terima: any;
   created_at: any;
 }
@@ -53,13 +60,13 @@ export default function LaporanPage() {
     return () => { unsubAtk(); unsubBA(); };
   }, [user]);
 
-  const filterByPeriode = (data: any[], tanggalField: string) => {
+  const filterByPeriode = (data: BASerahTerima[], tanggalField: string) => {
     if (!periodeStart || !periodeEnd) return data;
     const start = new Date(periodeStart);
     const end = new Date(periodeEnd);
     end.setHours(23, 59, 59);
     return data.filter(item => {
-      const t = item[tanggalField]?.toDate ? item[tanggalField].toDate() : new Date(item[tanggalField]);
+      const t = (item as any)[tanggalField]?.toDate ? (item as any)[tanggalField].toDate() : new Date((item as any)[tanggalField]);
       return t >= start && t <= end;
     });
   };
@@ -100,7 +107,7 @@ export default function LaporanPage() {
 
     const detailData: any[] = [];
     filteredBA.forEach((item, idx) => {
-      item.items?.forEach((subItem, subIdx) => {
+      item.items?.forEach((subItem: BAItem, subIdx: number) => {
         detailData.push({
           'No': `${idx + 1}.${subIdx + 1}`,
           'Tanggal': item.tanggal_serah_terima?.toDate ? item.tanggal_serah_terima.toDate().toLocaleDateString('id-ID') : '-',
@@ -165,7 +172,6 @@ export default function LaporanPage() {
         </button>
       </div>
 
-      {/* Filter Periode */}
       <div className="bg-white rounded-xl shadow p-4 mb-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
