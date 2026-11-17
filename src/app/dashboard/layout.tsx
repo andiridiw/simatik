@@ -10,6 +10,8 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 const menuOfficer = [
   { name: 'Permintaan ATK', icon: '📝', path: '/dashboard/permohonan' },
   { name: 'Data Persediaan', icon: '📦', path: '/dashboard/atk' },
+  { name: 'Pengaturan', icon: '⚙️', path: '/dashboard/pengaturan' },
+  { name: 'Bantuan', icon: '❓', path: '/dashboard/bantuan' },
 ];
 
 // Menu untuk Admin, TL, Asman
@@ -40,14 +42,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   useEffect(() => {
-    const userData = localStorage.getItem('currentUser');
+    // ✅ CEK localStorage DAN sessionStorage
+    const userData = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+    
     if (userData) {
       try {
         const parsed = JSON.parse(userData);
-        if (parsed.username) setUser(parsed);
-        else router.push('/');
-      } catch { router.push('/'); }
-    } else { router.push('/'); }
+        if (parsed.username) {
+          setUser(parsed);
+        } else {
+          router.push('/');
+        }
+      } catch {
+        router.push('/');
+      }
+    } else {
+      router.push('/');
+    }
     setLoading(false);
   }, [router]);
 
@@ -105,6 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     try {
       await signOut(auth);
       localStorage.removeItem('currentUser');
+      sessionStorage.removeItem('currentUser');
       router.push('/');
     } catch (error) { console.error('Logout error:', error); }
   };
@@ -121,7 +133,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-gray-50">
       <aside className="w-64 bg-white border-r flex flex-col fixed h-full overflow-y-auto">
-        {/* ✅ HEADER SIDEBAR: Pakai header-simatik.png (banner lebar) */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-3">
           <div className="bg-white rounded-lg p-2 flex items-center justify-center">
             <img 
