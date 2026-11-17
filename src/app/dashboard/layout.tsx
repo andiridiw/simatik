@@ -9,6 +9,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 const menuItems = [
   { name: 'Dashboard', icon: '🏠', path: '/dashboard' },
   { name: 'Data Persediaan', icon: '📦', path: '/dashboard/atk' },
+  { name: 'Upload Stok', icon: '📤', path: '/dashboard/upload-stok' },
   { name: 'Stock Opname', icon: '📋', path: '/dashboard/stock-opname' },
   { name: 'Permintaan ATK', icon: '📝', path: '/dashboard/permohonan' },
   { name: 'Pembelian', icon: '🛒', path: '/dashboard/pembelian' },
