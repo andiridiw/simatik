@@ -6,7 +6,7 @@ import { auth, db } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
-// Menu untuk Officer (user biasa)
+// Menu untuk Officer (user biasa) - SUDAH DITAMBAH Pengaturan & Bantuan
 const menuOfficer = [
   { name: 'Permintaan ATK', icon: '📝', path: '/dashboard/permohonan' },
   { name: 'Data Persediaan', icon: '📦', path: '/dashboard/atk' },
@@ -42,7 +42,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   useEffect(() => {
-    // ✅ CEK localStorage DAN sessionStorage
     const userData = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
     
     if (userData) {
@@ -104,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (isOfficer && !loading) {
-      const allowedPaths = ['/dashboard/permohonan', '/dashboard/atk'];
+      const allowedPaths = ['/dashboard/permohonan', '/dashboard/atk', '/dashboard/pengaturan', '/dashboard/bantuan'];
       const isAllowed = allowedPaths.some(p => pathname.startsWith(p)) || pathname === '/dashboard';
       if (!isAllowed) {
         router.push('/dashboard/permohonan');
