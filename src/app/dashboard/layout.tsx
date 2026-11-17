@@ -20,7 +20,6 @@ const menuFull = [
   { name: 'Stock Opname', icon: '📋', path: '/dashboard/stock-opname' },
   { name: 'Permintaan ATK', icon: '📝', path: '/dashboard/permohonan' },
   { name: 'Pembelian', icon: '🛒', path: '/dashboard/pembelian' },
-  { name: 'Input Stock', icon: '📥', path: '/dashboard/input-stock' },
   { name: 'BA Serah Terima', icon: '📤', path: '/dashboard/ba' },
   { name: 'Laporan', icon: '📊', path: '/dashboard/laporan' },
   { name: 'Pengaturan', icon: '⚙️', path: '/dashboard/pengaturan' },
