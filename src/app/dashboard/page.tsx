@@ -1,281 +1,215 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { useRouter, usePathname } from 'next/navigation';
+import { auth, db } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
-export default function DashboardPage() {
+const menuItems = [
+  { name: 'Dashboard', icon: '🏠', path: '/dashboard' },
+  { name: 'Data Persediaan', icon: '📦', path: '/dashboard/atk' },
+  { name: 'Stock Opname', icon: '📋', path: '/dashboard/stock-opname' },
+  { name: 'Permintaan ATK', icon: '📝', path: '/dashboard/permohonan' },
+  { name: 'Pembelian', icon: '🛒', path: '/dashboard/pembelian' },
+  { name: 'Input Stock', icon: '📥', path: '/dashboard/input-stock' },
+  { name: 'BA Serah Terima', icon: '📤', path: '/dashboard/ba' },
+  { name: 'Laporan', icon: '📊', path: '/dashboard/laporan' },
+  { name: 'Pengaturan', icon: '⚙️', path: '/dashboard/pengaturan' },
+  { name: 'Bantuan', icon: '❓', path: '/dashboard/bantuan' },
+];
+
+const menuAdminTL = [
+  { name: 'Upload Stok', icon: '📤', path: '/dashboard/upload-stok' },
+];
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
-  const [atks, setAtks] = useState<any[]>([]);
-  const [permohonans, setPermohonans] = useState<any[]>([]);
-  const [periode, setPeriode] = useState('30 Hari');
+  const [loading, setLoading] = useState(true);
+  const [showNotif, setShowNotif] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const userData = localStorage.getItem('currentUser');
-    if (userData) setUser(JSON.parse(userData));
-  }, []);
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        if (parsed.username) setUser(parsed);
+        else router.push('/');
+      } catch { router.push('/'); }
+    } else { router.push('/'); }
+    setLoading(false);
+  }, [router]);
 
   useEffect(() => {
-    const unsubAtk = onSnapshot(collection(db, 'atks'), (snap) => {
-      setAtks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    const unsubPerm = onSnapshot(collection(db, 'permohonans'), (snap) => {
-      setPermohonans(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    return () => { unsubAtk(); unsubPerm(); };
-  }, []);
+    if (!user) return;
+    
+    if (['admin', 'tl', 'asman'].includes(user.role)) {
+      const unsubPerm = onSnapshot(
+        query(collection(db, 'permohonans'), where('status', 'in', ['pending_admin', 'pending_tl', 'pending_asman'])),
+        (snap) => {
+          const newNotifs = snap.docs.map(d => {
+            const data = d.data() as any;
+            let statusLabel = '';
+            if (data.status === 'pending_admin') statusLabel = 'Menunggu verifikasi Admin';
+            if (data.status === 'pending_tl') statusLabel = 'Menunggu approval TL';
+            if (data.status === 'pending_asman') statusLabel = 'Menunggu approval Asman';
+            return {
+              id: d.id,
+              type: 'permohonan',
+              title: `Permohonan ${data.nomor}`,
+              message: `${data.nama_pemohon} (${data.divisi}) - ${statusLabel}`,
+              time: data.tanggal_pengajuan?.toDate ? data.tanggal_pengajuan.toDate() : new Date(data.tanggal_pengajuan),
+              link: '/dashboard/permohonan',
+            };
+          });
+          setNotifications(newNotifs);
+        }
+      );
+      return () => unsubPerm();
+    }
+  }, [user]);
 
-  const totalJenis = atks.length;
-  const totalStok = atks.reduce((sum, a) => sum + (a.stok_tersedia || 0), 0);
-  
-  const now = new Date();
-  const permohonanBulanIni = permohonans.filter(p => {
-    if (!p.tanggal_pengajuan) return false;
-    const d = p.tanggal_pengajuan.toDate ? p.tanggal_pengajuan.toDate() : new Date(p.tanggal_pengajuan);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
-  
-  const pengeluaranBulanIni = permohonans.filter(p => p.status === 'approved' || p.status === 'delivered').length;
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('currentUser');
+      router.push('/');
+    } catch (error) { console.error('Logout error:', error); }
+  };
 
-  const stokTersedia = atks.filter(a => a.stok_tersedia > a.stok_minimum).length;
-  const stokMenipis = atks.filter(a => a.stok_tersedia <= a.stok_minimum && a.stok_tersedia > 0).length;
-  const stokHabis = atks.filter(a => a.stok_tersedia <= 0).length;
-  const persenTersedia = totalJenis > 0 ? Math.round((stokTersedia / totalJenis) * 100) : 0;
-
-  const pieData = [
-    { name: 'Tersedia', value: stokTersedia, color: '#10b981' },
-    { name: 'Menipis', value: stokMenipis, color: '#f59e0b' },
-    { name: 'Habis', value: stokHabis, color: '#ef4444' },
-  ];
-
-  const chartData = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (29 - i));
-    const dayStr = `${date.getDate()} Nov`;
-    const count = permohonans.filter(p => {
-      if (!p.tanggal_pengajuan) return false;
-      const d = p.tanggal_pengajuan.toDate ? p.tanggal_pengajuan.toDate() : new Date(p.tanggal_pengajuan);
-      return d.getDate() === date.getDate() && d.getMonth() === date.getMonth();
-    }).length;
-    return { tanggal: dayStr, permintaan: count, pemakaian: Math.floor(Math.random() * 50) + 20 };
-  });
-
-  const stokMenipisList = atks.filter(a => a.stok_tersedia <= a.stok_minimum).slice(0, 5);
-
-  const aktivitasTerbaru = [...permohonans]
-    .sort((a, b) => {
-      const da = a.tanggal_pengajuan?.toDate ? a.tanggal_pengajuan.toDate() : new Date(a.tanggal_pengajuan || 0);
-      const db2 = b.tanggal_pengajuan?.toDate ? b.tanggal_pengajuan.toDate() : new Date(b.tanggal_pengajuan || 0);
-      return db2.getTime() - da.getTime();
-    })
-    .slice(0, 3);
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-gray-500">Memuat...</p></div>;
+  }
 
   if (!user) return null;
 
+  const unreadCount = notifications.length;
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <span>📊</span> Dashboard
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Ringkasan informasi monitoring Alat Tulis Kantor di lingkungan PLN UP3 Sanggau</p>
-        </div>
-        <div className="bg-white px-4 py-2 rounded-lg border flex items-center gap-2">
-          <span className="text-gray-500 text-sm">📅 Periode</span>
-          <select value={periode} onChange={(e) => setPeriode(e.target.value)} className="text-sm font-medium text-gray-700 outline-none">
-            <option>7 Hari</option>
-            <option>30 Hari</option>
-            <option>3 Bulan</option>
-            <option>1 Tahun</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Kartu Statistik */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-5 rounded-xl border border-teal-200">
-          <div className="bg-teal-500 p-2 rounded-lg inline-block">
-            <span className="text-2xl">📦</span>
+    <div className="flex min-h-screen bg-gray-50">
+      <aside className="w-64 bg-white border-r flex flex-col fixed h-full overflow-y-auto">
+        <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-4">
+          <div className="bg-white rounded-lg p-3 text-center">
+            <h2 className="text-xl font-bold text-teal-700">SIMATIK</h2>
+            <p className="text-xs text-teal-600">PLN UP3 Sanggau</p>
           </div>
-          <p className="text-3xl font-bold text-gray-800 mt-3">{totalJenis}</p>
-          <p className="text-sm text-gray-600">Jenis ATK</p>
-          <p className="text-xs text-teal-600 mt-1">↑ +0 dari bulan lalu</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200">
-          <div className="bg-blue-500 p-2 rounded-lg inline-block">
-            <span className="text-2xl">🏪</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-800 mt-3">{totalStok}</p>
-          <p className="text-sm text-gray-600">Total Stok</p>
-          <p className="text-xs text-blue-600 mt-1">↑ +5%</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-5 rounded-xl border border-orange-200">
-          <div className="bg-orange-500 p-2 rounded-lg inline-block">
-            <span className="text-2xl">🛒</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-800 mt-3">{permohonanBulanIni}</p>
-          <p className="text-sm text-gray-600">Permintaan Bulan Ini</p>
-          <p className="text-xs text-orange-600 mt-1">↑ +12%</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-xl border border-purple-200">
-          <div className="bg-purple-500 p-2 rounded-lg inline-block">
-            <span className="text-2xl">✅</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-800 mt-3">{pengeluaranBulanIni}</p>
-          <p className="text-sm text-gray-600">Pengeluaran Bulan Ini</p>
-          <p className="text-xs text-purple-600 mt-1">↑ +14%</p>
-        </div>
-      </div>
-
-      {/* Grafik */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <div className="lg:col-span-2 bg-white p-5 rounded-xl border">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <span>📊</span> Grafik Pemakaian ATK
-            </h3>
-            <div className="flex gap-2">
-              {['7 Hari', '30 Hari', '3 Bulan', '1 Tahun'].map(p => (
+        <nav className="flex-1 p-3 space-y-1">
+          {menuItems.map((item) => (
+            <button
+              key={item.name}
+              onClick={() => router.push(item.path)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
+                pathname === item.path ? 'bg-teal-600 text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <span>{item.icon}</span>
+              <span>{item.name}</span>
+            </button>
+          ))}
+          
+          {(user.role === 'admin' || user.role === 'tl') && (
+            <>
+              <div className="border-t border-gray-200 my-2"></div>
+              <p className="text-xs text-gray-400 px-3 py-1 font-medium">MENU KHUSUS</p>
+              {menuAdminTL.map((item) => (
                 <button
-                  key={p}
-                  onClick={() => setPeriode(p)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    periode === p ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  key={item.name}
+                  onClick={() => router.push(item.path)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
+                    pathname === item.path ? 'bg-teal-600 text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  {p}
+                  <span>{item.icon}</span>
+                  <span>{item.name}</span>
                 </button>
               ))}
+            </>
+          )}
+        </nav>
+
+        <div className="p-4 border-t bg-gradient-to-br from-teal-50 to-blue-50">
+          <p className="text-xs text-teal-700 font-medium text-center">Tatakelola ATK Lebih Efisien</p>
+          <p className="text-xs text-teal-600 text-center">Mendukung Energi untuk Negeri</p>
+          <p className="text-xs text-gray-500 text-center mt-3">PLN UP3 Sanggau © 2026</p>
+        </div>
+      </aside>
+
+      <div className="flex-1 ml-64">
+        <header className="bg-white border-b sticky top-0 z-20">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div>
+              <h1 className="text-xl font-bold text-gray-800">SIMATIK</h1>
+              <p className="text-xs text-gray-500">Sistem Informasi Monitoring Alat Tulis Kantor • PLN UP3 Sanggau</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <button 
+                  onClick={() => setShowNotif(!showNotif)} 
+                  className="relative p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <span className="text-xl">🔔</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotif && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border max-h-96 overflow-y-auto z-50">
+                    <div className="p-3 border-b bg-gray-50 flex justify-between items-center">
+                      <h3 className="font-bold text-sm text-gray-800">🔔 Notifikasi</h3>
+                      <button onClick={() => setShowNotif(false)} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+                    </div>
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-gray-400 text-sm">
+                        <p className="text-2xl mb-2">📭</p>
+                        <p>Tidak ada notifikasi baru</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {notifications.map((notif) => (
+                          <button
+                            key={notif.id}
+                            onClick={() => {
+                              router.push(notif.link);
+                              setShowNotif(false);
+                            }}
+                            className="w-full text-left p-3 hover:bg-teal-50 transition"
+                          >
+                            <p className="text-sm font-medium text-gray-800">{notif.title}</p>
+                            <p className="text-xs text-gray-600 mt-1">{notif.message}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {notif.time?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {user.nama?.charAt(0) || 'U'}
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-700">{user.nama}</p>
+                  <p className="text-xs text-gray-500">{user.jabatan || user.role?.toUpperCase()}</p>
+                </div>
+                <button onClick={handleLogout} className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700">Keluar</button>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4 mb-3 text-xs">
-            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-teal-500 rounded-full"></span> Pemakaian</div>
-            <div className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-300 rounded-full"></span> Permintaan</div>
-          </div>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="tanggal" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Bar dataKey="pemakaian" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Line type="monotone" dataKey="permintaan" stroke="#93c5fd" strokeWidth={2} dot={{ r: 3 }} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        </header>
 
-        <div className="bg-white p-5 rounded-xl border">
-          <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
-            <span>📦</span> Status Stok
-          </h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value">
-                {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="text-center -mt-16 mb-12">
-            <p className="text-3xl font-bold text-gray-800">{persenTersedia}%</p>
-            <p className="text-xs text-gray-500">Tersedia</p>
-          </div>
-          <div className="space-y-2 mt-4">
-            {pieData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></span>
-                  <span className="text-gray-700">{item.name}</span>
-                </div>
-                <span className="font-medium text-gray-800">{item.value} Item</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Stok Menipis & Aktivitas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-xl border">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <span className="text-orange-500">⚠️</span> Stok Menipis
-            </h3>
-            <button className="text-xs text-teal-600 hover:underline">Lihat Semua →</button>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-gray-500">
-                <th className="pb-2">No</th>
-                <th className="pb-2">Nama ATK</th>
-                <th className="pb-2">Stok Tersisa</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stokMenipisList.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-4 text-gray-400">✅ Semua stok aman</td></tr>
-              ) : (
-                stokMenipisList.map((atk, i) => (
-                  <tr key={atk.id} className="border-b">
-                    <td className="py-2">{i + 1}</td>
-                    <td className="py-2 font-medium">{atk.nama}</td>
-                    <td className="py-2">{atk.stok_tersedia} {atk.satuan}</td>
-                    <td className="py-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        atk.stok_tersedia <= 0 ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-                      }`}>
-                        {atk.stok_tersedia <= 0 ? '• Habis' : '• Menipis'}
-                      </span>
-                    </td>
-                    <td className="py-2">
-                      <button className="text-teal-600 hover:underline text-xs">[Lihat]</button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              <span>🕐</span> Aktivitas Terbaru
-            </h3>
-            <button className="text-xs text-teal-600 hover:underline">Lihat Semua →</button>
-          </div>
-          <div className="space-y-3">
-            {aktivitasTerbaru.length === 0 ? (
-              <p className="text-center text-gray-400 py-4 text-sm">Belum ada aktivitas</p>
-            ) : (
-              aktivitasTerbaru.map((p) => {
-                const icon = p.status === 'approved' ? '✅' : p.status === 'rejected' ? '❌' : '🛒';
-                const bgColor = p.status === 'approved' ? 'bg-green-100' : p.status === 'rejected' ? 'bg-red-100' : 'bg-blue-100';
-                const tanggal = p.tanggal_pengajuan?.toDate ? p.tanggal_pengajuan.toDate().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
-                return (
-                  <div key={p.id} className="flex items-start gap-3">
-                    <div className={`${bgColor} p-2 rounded-full`}>
-                      <span>{icon}</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-800">
-                        <strong>{p.status === 'approved' ? 'Disetujui' : p.status === 'rejected' ? 'Ditolak' : 'Permintaan baru'}</strong> dari {p.nama_pemohon} ({p.divisi})
-                      </p>
-                      <p className="text-xs text-gray-500">{tanggal} • {p.nomor}</p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
+        <main className="p-6">{children}</main>
       </div>
     </div>
   );
