@@ -161,7 +161,7 @@ export default function LoginPage() {
               <div className="text-center mt-4">
                 <button
                   type="button"
-                  onClick={() => alert('Silakan hubungi Administrator SIMATIK untuk reset password.\n\nEmail: admin@pln-up3-sanggau.co.id')}
+                  onClick={() => alert('Untuk reset password, silakan hubungi:\n\nSeksi Administrasi Umum\nPLN UP3 Sanggau')}
                   className="text-sm text-teal-600 hover:text-teal-800"
                 >
                   Forgot Password
@@ -190,14 +190,14 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Footer Bar - Style IAM PLN */}
+      {/* Footer Bar */}
       <div className="bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo-pln.png" alt="PLN" className="w-8 h-8 object-contain" />
             <div>
-              <p className="text-sm font-semibold">SIMATIK Identity and Access Management</p>
-              <p className="text-xs text-teal-100">Copyright © 2018 - 2026 PT PLN (Persero) UP3 Sanggau</p>
+              <p className="text-sm font-semibold">SIMATIK - Sistem Monitoring Inventori Alat Tulis Kantor</p>
+              <p className="text-xs text-teal-100">Copyright 2026 by : Seksi Administrasi Umum PLN UP3 Sanggau</p>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-2">
