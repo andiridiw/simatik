@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-64 bg-white border-r flex flex-col fixed h-full overflow-y-auto">
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-4">
           <div className="bg-white rounded-lg p-2 flex items-center justify-center">
-            <img src="/logo-simatik.png" alt="SIMATIK" className="w-20 h-20 object-contain" />
+            <img src="/logo-simatik.png" alt="SIMATIK" className="w-20 h-20 object-contain rounded-full" />
           </div>
         </div>
 
