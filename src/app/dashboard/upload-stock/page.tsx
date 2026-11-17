@@ -41,15 +41,27 @@ export default function UploadStokPage() {
 
   useEffect(() => {
     const userData = localStorage.getItem('currentUser');
-    if (userData) setUser(JSON.parse(userData));
-  }, []);
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      setUser(parsed);
+      
+      // ✅ CEK AKSES: Hanya admin dan tl yang boleh
+      if (parsed.role !== 'admin' && parsed.role !== 'tl') {
+        alert('⛔ Akses Ditolak!\n\nHanya Admin dan TL yang dapat mengakses menu Upload Stok.');
+        router.push('/dashboard');
+      }
+    } else {
+      router.push('/');
+    }
+  }, [router]);
 
   useEffect(() => {
+    if (!user) return;
     const unsubscribe = onSnapshot(collection(db, 'atks'), (snapshot) => {
       setAtks(snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as ATK[]);
     });
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const downloadTemplate = () => {
     const template = [
