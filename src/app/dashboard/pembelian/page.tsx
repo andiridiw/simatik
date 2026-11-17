@@ -1,5 +1,6 @@
 'use client';
 
+import { getCurrentUser } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore';
@@ -47,8 +48,8 @@ export default function PembelianPage() {
   });
 
   useEffect(() => {
-    const userData = localStorage.getItem('currentUser');
-    if (userData) setUser(JSON.parse(userData));
+    const userData = getCurrentUser();
+    if (userData) setUser(userData);
   }, []);
 
   useEffect(() => {

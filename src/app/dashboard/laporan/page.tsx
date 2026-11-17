@@ -1,5 +1,6 @@
 'use client';
 
+import { getCurrentUser } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -23,8 +24,8 @@ export default function LaporanPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const userData = localStorage.getItem('currentUser');
-    if (userData) setUser(JSON.parse(userData));
+    const userData = getCurrentUser();
+    if (userData) setUser(userData);
   }, []);
 
   useEffect(() => {

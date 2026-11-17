@@ -1,5 +1,6 @@
 'use client';
 
+import { getCurrentUser } from '@/lib/auth';
 import { Suspense, useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';

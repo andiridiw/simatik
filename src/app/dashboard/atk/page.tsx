@@ -1,5 +1,6 @@
 'use client';
 
+import { getCurrentUser } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';

@@ -1,5 +1,6 @@
 'use client';
 
+import { getCurrentUser } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
@@ -27,9 +28,9 @@ export default function PengaturanPage() {
   });
 
   useEffect(() => {
-    const userData = localStorage.getItem('currentUser');
+    const userData = getCurrentUser();
     if (userData) {
-      const parsed = JSON.parse(userData);
+      const parsed = (userData);
       setUser(parsed);
       setProfilForm({
         nama: parsed.nama || '',

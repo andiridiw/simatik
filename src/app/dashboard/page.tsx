@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
+import { getCurrentUser } from '@/lib/auth';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -15,12 +16,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const userData = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch {}
-    }
+    const userData = getCurrentUser();
+    if (userData) setUser(userData);
   }, []);
 
   useEffect(() => {

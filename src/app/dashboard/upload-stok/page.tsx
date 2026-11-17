@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { getCurrentUser } from '@/lib/auth';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
 
@@ -40,13 +41,11 @@ export default function UploadStokPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const userData = localStorage.getItem('currentUser');
+    const userData = getCurrentUser();
     if (userData) {
-      const parsed = JSON.parse(userData);
-      setUser(parsed);
+      setUser(userData);
       
-      // ✅ CEK AKSES: Hanya admin dan tl yang boleh
-      if (parsed.role !== 'admin' && parsed.role !== 'tl') {
+      if (userData.role !== 'admin' && userData.role !== 'tl') {
         alert('⛔ Akses Ditolak!\n\nHanya Admin dan TL yang dapat mengakses menu Upload Stok.');
         router.push('/dashboard');
       }
@@ -222,7 +221,6 @@ export default function UploadStokPage() {
         </p>
       </div>
 
-      {/* STEP 1: UPLOAD */}
       {step === 'upload' && (
         <div className="bg-white rounded-xl shadow p-8">
           <div className="text-center">
@@ -262,7 +260,6 @@ export default function UploadStokPage() {
         </div>
       )}
 
-      {/* STEP 2: PREVIEW */}
       {step === 'preview' && (
         <div>
           <div className="bg-white rounded-xl shadow p-6 mb-4">
@@ -342,7 +339,6 @@ export default function UploadStokPage() {
         </div>
       )}
 
-      {/* STEP 3: DONE */}
       {step === 'done' && (
         <div className="bg-white rounded-xl shadow p-8 text-center">
           <div className="text-6xl mb-4">✅</div>

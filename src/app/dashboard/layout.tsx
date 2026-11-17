@@ -5,8 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { getCurrentUser } from '@/lib/auth';
 
-// Menu untuk Officer (user biasa) - SUDAH DITAMBAH Pengaturan & Bantuan
 const menuOfficer = [
   { name: 'Permintaan ATK', icon: '📝', path: '/dashboard/permohonan' },
   { name: 'Data Persediaan', icon: '📦', path: '/dashboard/atk' },
@@ -14,7 +14,6 @@ const menuOfficer = [
   { name: 'Bantuan', icon: '❓', path: '/dashboard/bantuan' },
 ];
 
-// Menu untuk Admin, TL, Asman
 const menuFull = [
   { name: 'Dashboard', icon: '🏠', path: '/dashboard' },
   { name: 'Data Persediaan', icon: '📦', path: '/dashboard/atk' },
@@ -28,7 +27,6 @@ const menuFull = [
   { name: 'Bantuan', icon: '❓', path: '/dashboard/bantuan' },
 ];
 
-// Menu khusus Admin & TL
 const menuAdminTL = [
   { name: 'Upload Stok', icon: '📤', path: '/dashboard/upload-stok' },
 ];
@@ -42,13 +40,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   useEffect(() => {
-    const userData = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+    const userData = getCurrentUser();
     
     if (userData) {
       try {
-        const parsed = JSON.parse(userData);
-        if (parsed.username) {
-          setUser(parsed);
+        if (userData.username) {
+          setUser(userData);
         } else {
           router.push('/');
         }
@@ -134,11 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-64 bg-white border-r flex flex-col fixed h-full overflow-y-auto">
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-3">
           <div className="bg-white rounded-lg p-2 flex items-center justify-center">
-            <img 
-              src="/header-simatik.png" 
-              alt="SIMATIK" 
-              className="w-full h-auto object-contain"
-            />
+            <img src="/header-simatik.png" alt="SIMATIK" className="w-full h-auto object-contain" />
           </div>
         </div>
 
@@ -193,10 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex items-center gap-4">
               {!isOfficer && (
                 <div className="relative">
-                  <button 
-                    onClick={() => setShowNotif(!showNotif)} 
-                    className="relative p-2 hover:bg-gray-100 rounded-full"
-                  >
+                  <button onClick={() => setShowNotif(!showNotif)} className="relative p-2 hover:bg-gray-100 rounded-full">
                     <span className="text-xl">🔔</span>
                     {unreadCount > 0 && (
                       <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -221,10 +211,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           {notifications.map((notif) => (
                             <button
                               key={notif.id}
-                              onClick={() => {
-                                router.push(notif.link);
-                                setShowNotif(false);
-                              }}
+                              onClick={() => { router.push(notif.link); setShowNotif(false); }}
                               className="w-full text-left p-3 hover:bg-teal-50 transition"
                             >
                               <p className="text-sm font-medium text-gray-800">{notif.title}</p>
