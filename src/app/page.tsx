@@ -20,25 +20,40 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
+    console.log('🔍 [LOGIN] Mulai proses login...');
+    console.log('🔍 [LOGIN] Username:', username);
+
     try {
+      // Step 1: Cek user di Firestore
+      console.log('🔍 [LOGIN] Step 1: Cek user di Firestore...');
       const userDoc = await getDoc(doc(db, 'users', username));
+      
       if (!userDoc.exists()) {
+        console.error('❌ [LOGIN] User tidak ditemukan di Firestore');
         setError('Username tidak ditemukan');
         setLoading(false);
         return;
       }
 
       const userData = userDoc.data() as any;
+      console.log('✅ [LOGIN] User ditemukan:', userData);
+      console.log('🔍 [LOGIN] Email dari Firestore:', userData.Email);
+
       const email = userData.Email;
 
       if (!email) {
+        console.error('❌ [LOGIN] Email kosong di Firestore');
         setError('Email tidak terdaftar di sistem');
         setLoading(false);
         return;
       }
 
-      await signInWithEmailAndPassword(auth, email, password);
+      // Step 2: Login dengan Firebase Auth
+      console.log('🔍 [LOGIN] Step 2: Login Firebase Auth dengan email:', email);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('✅ [LOGIN] Firebase Auth berhasil:', userCredential.user.email);
 
+      // Step 3: Simpan data user
       const currentUser = {
         username,
         nama: userData.nama,
@@ -49,16 +64,27 @@ export default function LoginPage() {
         email: email,
       };
 
+      console.log('🔍 [LOGIN] Step 3: Simpan data user:', currentUser);
+
       if (rememberMe) {
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
       } else {
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
       }
 
+      console.log('✅ [LOGIN] Data user tersimpan. Redirect ke dashboard...');
+
+      // Step 4: Redirect
       router.push('/dashboard');
     } catch (err: any) {
+      console.error('❌ [LOGIN] ERROR:', err);
+      console.error('❌ [LOGIN] Error code:', err.code);
+      console.error('❌ [LOGIN] Error message:', err.message);
+      
       if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Password salah');
+      } else if (err.code === 'auth/user-not-found') {
+        setError('Email tidak terdaftar di Firebase Auth');
       } else {
         setError('Login gagal: ' + err.message);
       }
@@ -69,10 +95,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
-          {/* Logo SIMATIK di atas */}
           <div className="flex justify-center mb-6">
             <img 
               src="/logo-simatik.png" 
@@ -81,12 +105,10 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Card Login */}
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Sign In</h2>
 
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Username */}
               <div>
                 <input
                   type="text"
@@ -98,7 +120,6 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Password */}
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -127,7 +148,6 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              {/* Remember Me */}
               <div className="flex items-center">
                 <input
                   id="remember-me"
@@ -141,14 +161,12 @@ export default function LoginPage() {
                 </label>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
                   <p className="text-sm text-red-700">❌ {error}</p>
                 </div>
               )}
 
-              {/* Tombol Sign In */}
               <button
                 type="submit"
                 disabled={loading}
@@ -157,7 +175,6 @@ export default function LoginPage() {
                 {loading ? 'Memproses...' : 'Sign In'}
               </button>
 
-              {/* Forgot Password */}
               <div className="text-center mt-4">
                 <button
                   type="button"
@@ -170,7 +187,6 @@ export default function LoginPage() {
             </form>
           </div>
 
-          {/* Privacy & Terms */}
           <div className="flex justify-between mt-4 px-2">
             <button
               type="button"
@@ -190,7 +206,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Footer Bar */}
       <div className="bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
