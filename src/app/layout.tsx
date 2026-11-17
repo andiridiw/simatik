@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SIMATIK - PLN UP3 Sanggau",
   description: "Sistem Informasi Monitoring Alat Tulis Kantor PLN UP3 Sanggau",
+  icons: {
+    icon: "/logo-simatik.png",
+  },
 };
 
 export default function RootLayout({

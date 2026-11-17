@@ -19,7 +19,6 @@ const menuItems = [
   { name: 'Bantuan', icon: '❓', path: '/dashboard/bantuan' },
 ];
 
-// Menu khusus Admin & TL
 const menuAdminTL = [
   { name: 'Upload Stok', icon: '📤', path: '/dashboard/upload-stok' },
 ];
@@ -93,45 +92,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen bg-gray-50">
       <aside className="w-64 bg-white border-r flex flex-col fixed h-full overflow-y-auto">
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-4">
-          <div className="bg-white rounded-lg p-2">
-            <img src="/header-simatik.png" alt="SIMATIK" className="w-full h-auto" />
+          <div className="bg-white rounded-lg p-2 flex items-center justify-center">
+            <img src="/logo-simatik.png" alt="SIMATIK" className="w-20 h-20 object-contain" />
           </div>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-  {menuItems.map((item) => (
-    <button
-      key={item.name}
-      onClick={() => router.push(item.path)}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
-        pathname === item.path ? 'bg-teal-600 text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
-      }`}
-    >
-      <span>{item.icon}</span>
-      <span>{item.name}</span>
-    </button>
-  ))}
-  
-  {/* Menu Upload Stok hanya untuk Admin & TL */}
-  {(user.role === 'admin' || user.role === 'tl') && (
-    <>
-      <div className="border-t border-gray-200 my-2"></div>
-      <p className="text-xs text-gray-400 px-3 py-1 font-medium">MENU KHUSUS</p>
-      {menuAdminTL.map((item) => (
-        <button
-          key={item.name}
-          onClick={() => router.push(item.path)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
-            pathname === item.path ? 'bg-teal-600 text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <span>{item.icon}</span>
-          <span>{item.name}</span>
-        </button>
-      ))}
-    </>
-  )}
-</nav>
+          {menuItems.map((item) => (
+            <button
+              key={item.name}
+              onClick={() => router.push(item.path)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
+                pathname === item.path ? 'bg-teal-600 text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <span>{item.icon}</span>
+              <span>{item.name}</span>
+            </button>
+          ))}
+          
+          {(user.role === 'admin' || user.role === 'tl') && (
+            <>
+              <div className="border-t border-gray-200 my-2"></div>
+              <p className="text-xs text-gray-400 px-3 py-1 font-medium">MENU KHUSUS</p>
+              {menuAdminTL.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => router.push(item.path)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
+                    pathname === item.path ? 'bg-teal-600 text-white font-medium' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.name}</span>
+                </button>
+              ))}
+            </>
+          )}
+        </nav>
 
         <div className="p-4 border-t bg-gradient-to-br from-teal-50 to-blue-50">
           <p className="text-xs text-teal-700 font-medium text-center">Tatakelola ATK Lebih Efisien</p>
